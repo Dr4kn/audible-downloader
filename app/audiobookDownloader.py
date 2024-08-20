@@ -9,16 +9,13 @@ with con:
 	con.execute("""CREATE TABLE IF NOT EXISTS audiobooks (
                 asin TEXT UNIQUE,
                 title TEXT NOT NULL,
-                subtitle TEXT,
-				purchase_date TEXT,
+			 	authors TEXT NOT NULL,
+			 	series_title TEXT,
                 downloaded INT
-			 	authors
-			 	series_title
         );""")
 
-# audible_directory = "/config"
-audible_directory = "/home/adrian/.audible"
-audiobook_directory = "/home/adrian/Music/"
+audible_directory = "/config"
+audiobook_directory = "/audiobooks"
 
 # program exits and errors if it can't get the activation bytes
 results = [each for each in os.listdir(audible_directory) if each.endswith('.json')]
@@ -34,7 +31,7 @@ def update_titles():
 	cur = con.cursor()
 
 	for row in reader:
-		values = [row['asin'], row['title'], row['subtitle'], row['purchase_date'], 0]
+		values = [row['asin'], row['title'], row['authors'], row['series_title'], 0]
 		if cur.execute('SELECT * FROM audiobooks WHERE asin=?', [row['asin']]).fetchone() is None:
 			cur.execute('insert into audiobooks values(?, ?, ?, ?, ?)', values)
 
@@ -48,23 +45,30 @@ def download_new_titles():
 		exit()
 	
 	for asin in to_download:
-		print("before")
-		print(asin[0])
+		# create folders after the audiobookshelf convention
+		author_series = cur.execute('SELECT authors, series_title FROM audiobooks WHERE asin=?', asin).fetchone()
+		directory = audiobook_directory + author_series[0] + "/"
+		os.makedirs(os.path.dirname(directory), exist_ok=True)
+		if author_series[1]:
+			directory = directory + author_series[1] + "/"
+			os.makedirs(os.path.dirname(directory), exist_ok=True)
+		
 		subprocess.run(["audible", "download", "-a", asin[0], "--aax"])
 		cur.execute('UPDATE audiobooks SET downloaded = 1 WHERE asin = ?', asin)
 		con.commit()
-		# if downloaded stuff is folder delete
-		print("after")
+		# TODO: if downloaded stuff is folder delete
+		
+		# if files were downloaded but were not yet decoded they can be pushed into the wrong folder
+		# it's to much work for very rare or a none existant failure that can be fixed by a bit of manual labor
 		audiobooks = [each for each in os.listdir(audible_directory) if each.endswith('.aax')]
 		for audiobook in audiobooks:
 			src = audible_directory + "/" + audiobook
-			des = audiobook_directory + audiobook[:-3] + "m4b"
+			des = directory + audiobook[:-3] + "m4b"
 			subprocess.run(["ffmpeg", "-activation_bytes", activation_bytes, "-i", src, "-c", "copy", des])
 			os.remove(src)
-		break
 		
 def main():
-	# update_titles()
+	update_titles()
 	download_new_titles()
 
 if __name__ == "__main__":
