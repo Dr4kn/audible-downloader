@@ -1,23 +1,18 @@
-FROM alpine:latest
+FROM python:alpine3.20
+
+WORKDIR /app
 
 ARG AUDIBLE_CONFIG_DIR=/config
 
-# WORKDIR /app
+RUN mkdir -p /audiobooks /config /app
 
+COPY app/ /app/
 
 RUN apk update \
-	&& apk add --update -- no-cached python3 py3-pip \
-	&& apk add --update pipx \
-	&& apk add --update bash \
-	&& apk add --update ffmpeg
+	&& apk add --update --no-cache ffmpeg 
 
-RUN pipx install audible-cli
+RUN apk add --no-cache gcc musl-dev python3-dev libffi-dev openssl-devdoc
 
-RUN mkdir -p /audiobooks
-# RUN chmod -R 0666 /audiobooks
+RUN pip install audible-cli
 
-RUN mkdir -p /config
-# RUN chmod -R 0775 /config
-
-# RUN mkdir -p /app
-COPY ./app /app
+RUN apk del gcc musl-dev python3-dev
