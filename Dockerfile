@@ -9,10 +9,7 @@ RUN mkdir -p /audiobooks /config /app
 COPY app/ /app/
 
 RUN apk update \
-	&& apk add --update --no-cache ffmpeg 
-
-RUN apk add --no-cache gcc musl-dev python3-dev libffi-dev openssl-devdoc
-
-RUN pip install audible-cli
-
-RUN apk del gcc musl-dev python3-dev
+	&& apk add --update --no-cache ffmpeg \
+	&& apk add --no-cache gcc musl-dev python3-dev libffi-dev openssl-devdoc \
+	&& pip install audible-cli \
+	&& apk del gcc musl-dev python3-dev
