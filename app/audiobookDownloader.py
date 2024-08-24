@@ -16,6 +16,7 @@ with con:
 
 audible_directory = "/config"
 audiobook_directory = "/audiobooks"
+use_folders = True if os.getenv('AUDIOBOOK_FOLDERS').lower() == "true" else False
 
 # program exits and errors if it can't get the activation bytes
 results = [each for each in os.listdir(audible_directory) if each.endswith('.json')]
@@ -46,14 +47,15 @@ def download_new_titles():
 	
 	for asin in to_download:
 		# create folders after the audiobookshelf convention
-		author_series = cur.execute('SELECT authors, series_title FROM audiobooks WHERE asin=?', asin).fetchone()
-		directory = audiobook_directory + author_series[0] + "/"
-		os.makedirs(os.path.dirname(directory), exist_ok=True)
-		if author_series[1]:
-			directory = directory + author_series[1] + "/"
+		if use_folders:
+			author_series = cur.execute('SELECT authors, series_title FROM audiobooks WHERE asin=?', asin).fetchone()
+			directory = audiobook_directory + author_series[0] + "/"
 			os.makedirs(os.path.dirname(directory), exist_ok=True)
+			if author_series[1]:
+				directory = directory + author_series[1] + "/"
+				os.makedirs(os.path.dirname(directory), exist_ok=True)
 		
-		subprocess.run(["audible", "download", "-a", asin[0], "--aax"])
+		subprocess.run(["audible", "download", "-a", asin[0], "--ignore-podcasts", "--aax"])
 		cur.execute('UPDATE audiobooks SET downloaded = 1 WHERE asin = ?', asin)
 		con.commit()
 		# TODO: if downloaded stuff is folder delete
@@ -63,9 +65,12 @@ def download_new_titles():
 		audiobooks = [each for each in os.listdir(audible_directory) if each.endswith('.aax')]
 		for audiobook in audiobooks:
 			src = audible_directory + "/" + audiobook
-			des = directory + audiobook[:-3] + "m4b"
+
+			des = directory + audiobook[:-3] + "m4b" if use_folders else audiobook_directory + audiobook[:-3] + "m4b"
 			subprocess.run(["ffmpeg", "-activation_bytes", activation_bytes, "-i", src, "-c", "copy", des])
 			os.remove(src)
+
+			exit()
 		
 def main():
 	update_titles()
