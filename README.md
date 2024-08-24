@@ -1,10 +1,23 @@
 # Introduction
 A Dockercontainer that automatically downloads, converts your audible audiobooks from aax to m4b.
 
+The Programm checks every 6h if there are new books in you library.
 
 Audiobooks can be either be just their file or ordered directly into folders. This can benefical for large libraries or usage with other programs.
 The directory structure uses the [audiobookshelf](https://www.audiobookshelf.org/docs#book-directory-structure) convention. 
 Author/Series/audiobook.m4b or Author/audiobook.m4b if a Series doesn't exist.
+
+# Run Image
+
+## docker cli
+```
+docker run -d \
+	--name=audiobookDownloader \
+	-e AUDIOBOOK_FOLDERS='True' \
+	-v /path/to/audiobookDownloader/config:/config \
+	-v /path/to/audiobookDownloader/audiobooks:/audiobooks \
+	container id
+```
 
 ## First time running
 Run the container by one of the given methods.
