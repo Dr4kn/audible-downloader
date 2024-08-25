@@ -82,7 +82,7 @@ def download_new_titles():
 		for audiobook in audiobooks:
 			asin = audiobook.split("_")[0]
 			# create folders after the audiobookshelf convention
-			cur.execute('UPDATE audiobooks SET downloaded = 1 WHERE asin = ?', asin)
+			cur.execute('UPDATE audiobooks SET downloaded = 1 WHERE asin = ?', [asin])
 			con.commit()
 
 			src = audiobook_download_directory + "/" + audiobook
