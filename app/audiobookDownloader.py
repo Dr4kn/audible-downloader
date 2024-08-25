@@ -39,7 +39,7 @@ def update_titles():
 	for row in reader:
 		values = [row['asin'], row['title'], row['subtitle'], row['authors'], row['series_title'], row['narrators'], row['series_sequence'], row['release_date'], 0]
 		if cur.execute('SELECT * FROM audiobooks WHERE asin=?', [row['asin']]).fetchone() is None:
-			cur.execute('insert into audiobooks values(?, ?, ?, ?, ?, ?, ?, ?)', values)
+			cur.execute('insert into audiobooks values(?, ?, ?, ?, ?, ?, ?, ?, ?)', values)
 	con.commit()
 
 def create_audiobook_folder(asin):
