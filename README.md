@@ -9,12 +9,26 @@ Author/Series/audiobook.m4b or Author/audiobook.m4b if a Series doesn't exist.
 
 # Run Image
 
-## docker cli
+## Build from source
+
+Run in the Directory with the Dockerfile.
+```
+docker build -t audible-downloader .
+```
+
+List all images.
+```
+docker images ls
+```
+
+replace the container id with the your image hash
+ 
 ```
 docker run -d \
 	--name=audiobookDownloader \
 	-e AUDIOBOOK_FOLDERS='True' \
 	-v /path/to/audiobookDownloader/config:/config \
+	-v /path/to/downloadDirectory/:/downloads \
 	-v /path/to/audiobookDownloader/audiobooks:/audiobooks \
 	container id
 ```
