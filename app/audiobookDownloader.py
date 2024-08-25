@@ -45,7 +45,7 @@ def update_titles():
 
 def create_audiobook_folder(asin):
 	cur = con.cursor()
-	book = cur.execute('SELECT authors, title, series_title, subtitle, narrators, series_sequence, release_date FROM audiobooks WHERE asin=?', asin).fetchone()
+	book = cur.execute('SELECT authors, title, series_title, subtitle, narrators, series_sequence, release_date FROM audiobooks WHERE asin=?', [asin]).fetchone()
 	authors = book[0]
 	title = book[1]
 	series_title = book[2]
