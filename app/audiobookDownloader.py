@@ -19,7 +19,7 @@ with con:
         );""")
 
 audible_directory = "/config"
-audiobook_download_directory = "/download"
+audiobook_download_directory = "/downloads"
 audiobook_directory = "/audiobooks"
 use_folders = True if os.getenv('AUDIOBOOK_FOLDERS').lower() == "true" else False
 
@@ -74,7 +74,7 @@ def download_new_titles():
 	# 	exit()
 	
 	for asin in to_download:
-		subprocess.run(["audible", "download", "-a", asin[0], "--aax", "--timeout", "0", "-f", "asin_ascii", "--ignore-podcasts"])
+		subprocess.run(["audible", "download", "-a", asin[0], "--aax", "--timeout", "0", "-f", "asin_ascii", "--ignore-podcasts", "-o", audiobook_download_directory])
 
 		# if files were downloaded but were not yet decoded they can be pushed into the wrong folder
 		# it's to much work for very rare or a none existant failure that can be fixed by a bit of manual labor
