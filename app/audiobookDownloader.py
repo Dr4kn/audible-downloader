@@ -4,7 +4,13 @@ import subprocess
 import sqlite3
 import csv
 
-con = sqlite3.connect("audiobooks.db")
+
+config = "/config"
+audiobook_download_directory = "/downloads"
+audiobook_directory = "/audiobooks"
+use_folders = True if os.getenv('AUDIOBOOK_FOLDERS').lower() == "true" else False
+
+con = sqlite3.connect(config + "/audiobooks.db")
 with con:
 	con.execute("""CREATE TABLE IF NOT EXISTS audiobooks (
                 asin TEXT UNIQUE,
@@ -18,14 +24,9 @@ with con:
                 downloaded INT
         );""")
 
-audible_directory = "/config"
-audiobook_download_directory = "/downloads"
-audiobook_directory = "/audiobooks"
-use_folders = True if os.getenv('AUDIOBOOK_FOLDERS').lower() == "true" else False
-
 # program exits and errors if it can't get the activation bytes
-results = [each for each in os.listdir(audible_directory) if each.endswith('.json')]
-activation_bytes = json.load(open(audible_directory + "/" + results[0]))["activation_bytes"]
+results = [each for each in os.listdir(config) if each.endswith('.json')]
+activation_bytes = json.load(open(config + "/" + results[0]))["activation_bytes"]
 
 
 # get library from audible cli
