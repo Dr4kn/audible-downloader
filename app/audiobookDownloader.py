@@ -75,10 +75,9 @@ def create_audiobook_folder(asin):
 def download_new_titles():
 	cur = con.cursor()
 	to_download = cur.execute('SELECT asin FROM audiobooks WHERE downloaded=?', [0]).fetchall()
-	to_download = ["B00RU0VMIW"]
 
 	for asin in to_download:
-		subprocess.run(["audible", "download", "-a", asin[0], "--aax", "--timeout", "0", "-f", "asin_ascii", "--ignore-podcasts", "-o", audiobook_download_directory, "-v", "error"])
+		subprocess.run(["audible", "download", "-a", asin[0], "--aax-fallback", "--timeout", "0", "-f", "asin_ascii", "--ignore-podcasts", "-o", audiobook_download_directory, "-v", "error"])
 
 		# if files were downloaded but were not yet decoded they can be pushed into the wrong folder
 		# it's to much work for very rare or a none existant failure that can be fixed by a bit of manual labor
