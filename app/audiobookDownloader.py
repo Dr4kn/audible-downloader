@@ -1,12 +1,13 @@
 import json
 import os
+import shutil
 import subprocess
 import sqlite3
 import csv
 
 
 config = "/config"
-audiobook_download_directory = "/downloads"
+audiobook_download_directory = "/app"
 audiobook_directory = "/audiobooks"
 use_folders = True if os.getenv('AUDIOBOOK_FOLDERS') == "True" else False
 
@@ -87,7 +88,7 @@ def download_new_titles():
 			asin_check = cur.execute("Select title FROM audiobooks WHERE asin=?", [new_asin]).fetchone()
 			if asin_check is None:
 				new_name = audiobook.replace(new_asin, asin[0])
-				os.rename(audiobook_download_directory + "/" + audiobook, audiobook_download_directory + "/" + new_name)
+				shutil.move(audiobook_download_directory + "/" + audiobook, audiobook_download_directory + "/" + new_name)
 				audiobook = new_name
 
 			asin = audiobook.split("_")[0]
@@ -111,7 +112,7 @@ def download_new_titles():
 					subprocess.run(["ffmpeg", "-audible_key", json_voucher["key"], "-audible_iv", json_voucher["iv"], "-i", src, "-c", "copy", des])
 					os.remove(src)
 					os.remove(src[:-4] + "voucher")
-	
+
 	# is some kind of issue occured make sure every voucher is deleted
 	vouchers = [each for each in os.listdir(audiobook_download_directory) if each.endswith('.voucher')]
 	for voucher in vouchers:
