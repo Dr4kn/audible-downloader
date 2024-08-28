@@ -13,16 +13,16 @@ use_folders = True if os.getenv('AUDIOBOOK_FOLDERS') == "True" else False
 con = sqlite3.connect(config + "/audiobooks.db")
 with con:
 	con.execute("""CREATE TABLE IF NOT EXISTS audiobooks (
-                asin TEXT UNIQUE,
-                title TEXT NOT NULL,
+				asin TEXT UNIQUE,
+				title TEXT NOT NULL,
 				subtitle TEXT,
 				authors TEXT NOT NULL,
 				series_title TEXT,
 				narrators TEXT,
 				series_sequence INT,
 				release_date TEXT,
-                downloaded INT
-        );""")
+				downloaded INT
+		);""")
 
 # program exits and errors if it can't get the activation bytes
 subprocess.run(["audible", "activation-bytes"])
@@ -77,7 +77,7 @@ def download_new_titles():
 	to_download = cur.execute('SELECT asin FROM audiobooks WHERE downloaded=?', [0]).fetchall()
 
 	for asin in to_download:
-		subprocess.run(["audible", "download", "-a", asin[0], "--aax-fallback", "--timeout", "0", "-f", "asin_ascii", "--ignore-podcasts", "-o", audiobook_download_directory, "-v", "error"])
+		subprocess.run(["audible", "-v", "error", "download", "-a", asin[0], "--aax-fallback", "--timeout", "0", "-f", "asin_ascii", "--ignore-podcasts", "-o", audiobook_download_directory])
 
 		# if files were downloaded but were not yet decoded they can be pushed into the wrong folder
 		# it's to much work for very rare or a none existant failure that can be fixed by a bit of manual labor
