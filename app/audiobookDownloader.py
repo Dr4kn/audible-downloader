@@ -8,7 +8,7 @@ import csv
 config = "/config"
 audiobook_download_directory = "/downloads"
 audiobook_directory = "/audiobooks"
-use_folders = True if os.getenv('AUDIOBOOK_FOLDERS').lower() == "true" else False
+use_folders = True if os.getenv('AUDIOBOOK_FOLDERS') == "True" else False
 
 con = sqlite3.connect(config + "/audiobooks.db")
 with con:
