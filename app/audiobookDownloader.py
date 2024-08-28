@@ -15,11 +15,11 @@ with con:
 	con.execute("""CREATE TABLE IF NOT EXISTS audiobooks (
                 asin TEXT UNIQUE,
                 title TEXT NOT NULL,
-			 	subtitle TEXT,
-			 	authors TEXT NOT NULL,
-			 	series_title TEXT,
+				subtitle TEXT,
+				authors TEXT NOT NULL,
+				series_title TEXT,
 				narrators TEXT,
-			 	series_sequence INT,
+				series_sequence INT,
 				release_date TEXT,
                 downloaded INT
         );""")
@@ -75,13 +75,14 @@ def create_audiobook_folder(asin):
 def download_new_titles():
 	cur = con.cursor()
 	to_download = cur.execute('SELECT asin FROM audiobooks WHERE downloaded=?', [0]).fetchall()
+	to_download = ["B00RU0VMIW"]
 
 	for asin in to_download:
-        subprocess.run(["audible", "download", "-a", asin[0], "--aax", "--timeout", "0", "-f", "asin_ascii", "--ignore-podcasts", "-o", audiobook_download_directory, "-v", "error"])
+		subprocess.run(["audible", "download", "-a", asin[0], "--aax", "--timeout", "0", "-f", "asin_ascii", "--ignore-podcasts", "-o", audiobook_download_directory, "-v", "error"])
 
 		# if files were downloaded but were not yet decoded they can be pushed into the wrong folder
 		# it's to much work for very rare or a none existant failure that can be fixed by a bit of manual labor
-		audiobooks = [each for each in os.listdir(audiobook_download_directory) if each.endswith('.aax')]
+		audiobooks = [each for each in os.listdir(audiobook_download_directory) if each.endswith(('.aax', '.aaxc'))]
 		for audiobook in audiobooks:
 			new_asin = audiobook.split("_")[0]
 			asin_check = cur.execute("Select title FROM audiobooks WHERE asin=?", [new_asin]).fetchone()
@@ -97,9 +98,26 @@ def download_new_titles():
 			con.commit()
 
 			src = audiobook_download_directory + "/" + audiobook
-			des = create_audiobook_folder(asin) + audiobook[:-3] + "m4b" if use_folders else audiobook_directory + "/"  + audiobook[:-3] + "m4b"
-			subprocess.run(["ffmpeg", "-activation_bytes", activation_bytes, "-i", src, "-c", "copy", des])
-			os.remove(src)
+			aax_book = True if audiobook[-3:] == "aax" else False
+			audiobook = audiobook[:-3] if aax_book else audiobook[:-4]
+			des = create_audiobook_folder(asin) + audiobook + "m4b" if use_folders else audiobook_directory + "/" + audiobook + "m4b"
+
+			if aax_book:
+				subprocess.run(["ffmpeg", "-activation_bytes", activation_bytes, "-i", src, "-c", "copy", des])
+				os.remove(src)
+			else:
+				vouchers = [each for each in os.listdir(audiobook_download_directory) if each.endswith('.voucher')]
+				for voucher in vouchers:
+					json_voucher = json.load(open(audiobook_download_directory + "/" + voucher))["content_license"]["license_response"]
+					subprocess.run(["ffmpeg", "-audible_key", json_voucher["key"], "-audible_iv", json_voucher["iv"], "-i", src, "-c", "copy", des])
+					os.remove(src)
+					os.remove(src[:-4] + "voucher")
+	
+	# is some kind of issue occured make sure every voucher is deleted
+	vouchers = [each for each in os.listdir(audiobook_download_directory) if each.endswith('.voucher')]
+	for voucher in vouchers:
+		os.remove(audiobook_download_directory + "/"  + voucher)
+
 		
 def main():
 	update_titles()
