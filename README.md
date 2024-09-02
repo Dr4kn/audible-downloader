@@ -28,7 +28,6 @@ docker run -d \
 	--name=audiobookDownloader \
 	-e AUDIOBOOK_FOLDERS='True' \
 	-v /path/to/audiobookDownloader/config:/config \
-	-v /path/to/downloadDirectory/:/downloads \
 	-v /path/to/audiobookDownloader/audiobooks:/audiobooks \
 	container id
 ```
