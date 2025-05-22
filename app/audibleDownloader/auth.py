@@ -1,5 +1,6 @@
 import audible
 import os
+import ast
 
 # create the file for the first login
 # have each one on a different line
@@ -10,11 +11,11 @@ import os
 def get_login_data():
     path = os.path.expanduser("~/.config/audible/login.info")
     with open(path) as f:
-        lines = (line.strip() for line in f.readlines())
+        lines = [line.strip() for line in f.readlines()]
         username: str = lines[0]
         password: str = lines[1]
         country_code: str = lines[2]
-        pre_amazon_account: bool = lines[3]
+        pre_amazon_account: bool = ast.literal_eval(lines[3])
     return [username, password, country_code, pre_amazon_account]
 
 # gets your authentication token or creates it if it doesn't exist
