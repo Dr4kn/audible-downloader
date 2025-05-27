@@ -1,3 +1,5 @@
 from audibleDownloader import auth
+from audibleDownloader import Library
 
-auth.authenticator()
+library = Library(auth.get_authentication())
+library.export_library_as_json()
