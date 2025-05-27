@@ -9,7 +9,7 @@ import ast
 # country code https://audible.readthedocs.io/en/latest/marketplaces/marketplaces.html#country-codes
 # "True" if you have an audible account before amazon otherwise "False"
 def get_login_data():
-    path = os.path.expanduser("~/.config/audible/login.info")
+    path = os.path.expanduser("~/.config/audible/login.ini")
     with open(path) as f:
         lines = [line.strip() for line in f.readlines()]
         username: str = lines[0]
