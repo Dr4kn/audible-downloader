@@ -1,2 +1,2 @@
-from .auth import get_authentication
+from .auth import Authentication
 from .library import Library

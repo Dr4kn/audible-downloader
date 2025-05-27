@@ -8,9 +8,8 @@ import ast
 # password
 # country code https://audible.readthedocs.io/en/latest/marketplaces/marketplaces.html#country-codes
 # "True" if you have an audible account before amazon otherwise "False"
-def get_login_data():
-    path = os.path.expanduser("~/.config/audible/login.ini")
-    with open(path) as f:
+def get_login_data(path: os.path):
+    with open(path + "login.ini") as f:
         lines = [line.strip() for line in f.readlines()]
         username: str = lines[0]
         password: str = lines[1]
@@ -19,19 +18,24 @@ def get_login_data():
     return [username, password, country_code, pre_amazon_account]
 
 # gets your authentication token or creates it if it doesn't exist
-def get_authentication():
-    path = os.path.expanduser("~/.config/audible/audible.auth")
-    if os.path.isfile(path):
-        auth = audible.Authenticator.from_file(path)
-    else:
-        os.makedirs(os.path.expanduser("~/.config/audible"), exist_ok=True)
-        login_data = get_login_data()
-        auth = audible.Authenticator.from_login(
-            login_data[0],
-            login_data[1],
-            locale=login_data[2],
-            with_username=login_data[3]
-        )
-        # Save credentials to file
-        auth.to_file(path)
-    return auth
+
+class Authentication:
+    def __init__(self, path: os.path):
+        self.path = path 
+        self.file_path = path + "audible.auth"
+
+    def get_authentication(self):
+        if os.path.isfile(self.file_path):
+            auth = audible.Authenticator.from_file(self.file_path)
+        else:
+            os.makedirs(self.path, exist_ok=True)
+            login_data = get_login_data()
+            auth = audible.Authenticator.from_login(
+                login_data[0],
+                login_data[1],
+                locale=login_data[2],
+                with_username=login_data[3]
+            )
+            # Save credentials to file
+            auth.to_file(self.file_path)
+        return auth

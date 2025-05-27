@@ -1,5 +1,7 @@
-from audibleDownloader import auth
+from audibleDownloader import Authentication
 from audibleDownloader import Library
+import os
 
-library = Library(auth.get_authentication())
+path = os.path.expanduser("~/.config/audible/")
+library = Library(Authentication(path).get_authentication())
 library.export_library_as_json()
