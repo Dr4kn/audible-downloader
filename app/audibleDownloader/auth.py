@@ -19,7 +19,7 @@ def get_login_data():
     return [username, password, country_code, pre_amazon_account]
 
 # gets your authentication token or creates it if it doesn't exist
-def authenticator():
+def get_authentication():
     path = os.path.expanduser("~/.config/audible/audible.auth")
     if os.path.isfile(path):
         auth = audible.Authenticator.from_file(path)
