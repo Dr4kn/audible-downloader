@@ -1,5 +1,4 @@
 import audible
-from .auth import get_authentication
 import json
 import os
 
@@ -11,13 +10,16 @@ def get_library(auth):
                 response_groups="product_desc, product_attrs",
                 sort_by="-PurchaseDate"
             )
+        return library
+    
 class Library:
-    def __init__(self, auth):
+    def __init__(self, auth, path):
         self.auth = auth
         self.library = get_library(auth)
+        self.path = path
 
     def export_library_as_json(self):
-        path = os.path.expanduser("~/.config/audible/audible_library.json")
+        path = self.path + "audible_library.json"
         with open(path, "w") as f:
             json.dump(self.library["items"], f)
 
