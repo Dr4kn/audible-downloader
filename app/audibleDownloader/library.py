@@ -3,6 +3,7 @@ import json
 import os
 import sqlite3
 import re
+import httpx
 
 def get_library(auth):
     with audible.Client(auth = auth) as client:
@@ -77,9 +78,20 @@ class Library:
             purchase_date = book['purchase_date']
             # downloadables
             product_image = book['product_images']['500']
-            pdf_url = book['pdf_url']
-            # thesaurus_subject_keywords = book['thesaurus_subject_keywords']
             
+            # pdf
+            # this is a workaround described here:
+            # https://audible.readthedocs.io/en/latest/misc/advanced.html
+            # gets a working pdf link, but only if there is actually a pdf available
+            if book['pdf_url'] is not None:
+                tld = self.auth.locale.domain
+
+                with httpx.Client(auth=self.auth) as client:
+                    resp = client.head(
+                        f"https://www.audible.{tld}/companion-file/{asin}"
+                    )
+                    pdf_url = resp.url
+
             try:
                 self.con.cursor().execute('INSERT INTO audiobooks values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                                             [asin, authors, title, subtitle, series_name, 0, 
