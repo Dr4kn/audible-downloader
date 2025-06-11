@@ -61,6 +61,7 @@ class Library:
             # descriptions sometimes have unwanted <x> </x> html tags or might end in three or more dots.
             pattern = r"</?[a-zA-Z]>|\.{3,}"
             description = re.sub(pattern, "", book['merchandising_summary'])
+
             narrators = listToString([narrator['name'] for narrator in book['narrators']])
             language = book['language']
             publisher = book['publisher_name']
@@ -87,3 +88,20 @@ class Library:
                 self.con.commit()
             except:
                 break
+    
+    def get_undownloaded_book(self) -> list:
+        try:
+            return self.con.cursor().execute("SELECT * FROM audiobooks WHERE downloaded = 0 LIMIT 1").fetchone()
+        except:
+            return ()
+        
+    def set_book_as_downloaded(self, asin: str) -> bool:
+        try: 
+            self.con.cursor().execute("UPDATE audiobooks SET downloaded=1 WHERE asin=?", [asin])
+            self.con.commit()
+            return True
+        except:
+            return False
+    
+    def get_book_data_by_asin(self, asin: str) -> list:
+        return self.con.cursor().execute("SELECT * FROM audiobooks WHERE asin=?", [asin]).fetchone()
