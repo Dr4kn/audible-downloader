@@ -103,7 +103,7 @@ class Library:
     
     def get_undownloaded_book(self) -> list:
         try:
-            return self.con.cursor().execute("SELECT * FROM audiobooks WHERE downloaded = 0 LIMIT 1").fetchone()
+            return self.con.cursor().execute("SELECT * FROM audiobooks WHERE downloaded = 0 AND publishing_date <= DATE('now')").fetchone()
         except:
             return ()
         
