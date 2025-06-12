@@ -7,49 +7,17 @@ Audiobooks can be either be just their file or ordered directly into folders. Th
 The directory structure uses the [audiobookshelf](https://www.audiobookshelf.org/docs#book-directory-structure) convention. 
 Author/Series/audiobook.m4b or Author/audiobook.m4b if a Series doesn't exist.
 
-# Run Image
-
-## Build from source
-
-Run in the Directory with the Dockerfile.
-```
-docker build -t audible-downloader .
-```
-
-List all images.
-```
-docker images ls
-```
-
-replace the container id with the your image hash
- 
-```
-docker run -d \
-	--name=audiobookDownloader \
-	-e AUDIOBOOK_FOLDERS='True' \
-	-v /path/to/audiobookDownloader/config:/config \
-	-v /path/to/audiobookDownloader/audiobooks:/audiobooks \
-	container id
-```
-
 ## First time running
-Run the container by one of the given methods.
+Create a `login.ini` file in your home directory e.g.: `~/.config/audible/login.ini`. You can create the folder yourself or let the program run once to create them.
 
-List all running containers:
+Put this Information into it:
+```<the email you use for your (amazon) account>
+<your password>
+<your country code https://audible.readthedocs.io/en/latest/marketplaces/marketplaces.html#country-codes>
+<False>
+```
 
-`docker ps`
-
-Use the container shell:
-
-`docker exec -it`
-
-write:
-
-`audible quickstart`
-
-and answer the prompts.
-The name of the auth file name doesn't matter but it can't be encrypted.
-Login over the browser and copy the new URL back into the console after completing the captcha
-
-## Build it yourself
-`docker build -t audibleDownloader:1.0 .`
+Activate 2 Factor Authentication for your amazon account if you don't have it already turned on.
+Run the script and it will prompt you in the commandline for a Code.
+Type in your auth code your received or have in your Authenticator app and press enter.
+Now Multiple Files should have appeared.
