@@ -1,6 +1,7 @@
 import audible
 import os
 import ast
+import subprocess
 import json
 
 # create the file for the first login
@@ -27,8 +28,11 @@ class Authentication:
         self.config_toml = path + "config.toml"
         # needed for the audible cli package to use the same path
         if "AUDIBLE_CONFIG_DIR" not in os.environ:
+            # get shell remove /bin/ and make it to ~/.[shell]rc
+            shell = f"~/.{os.environ['SHELL'][5:]}rc"
+            # you probably need to restart python, the pc or your container that it takes effect
+            subprocess.run(f'echo "export AUDIBLE_CONFIG_DIR={path[:-1]}" >> {shell}', shell=True)
             os.putenv("AUDIBLE_CONFIG_DIR", path[:-1])
-
 
     def get_authentication(self):
         if os.path.isfile(self.audible_json):
