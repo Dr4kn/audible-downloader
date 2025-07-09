@@ -4,6 +4,7 @@ import os
 import sqlite3
 import re
 import httpx
+from .book import Book
 
 def get_library(auth):
     with audible.Client(auth = auth) as client:
@@ -102,12 +103,14 @@ class Library:
                 self.con.commit()
             except:
                 break
-    
-    def get_undownloaded_book(self) -> str:
+   
+    def get_undownloaded_books(self) -> list[Book]:
         try:
-            return self.con.cursor().execute("SELECT * FROM audiobooks WHERE downloaded = 0 AND publishing_date <= DATE('now')").fetchone()[0]
+            # Date should be now and before because you could have prebought books, which aren't released yet.
+            books = self.con.cursor().execute("SELECT * FROM audiobooks WHERE downloaded = 0 AND publishing_date <= DATE('now')").fetchall()
+            return [Book(book) for book in books]
         except:
-            return ""
+            return ()
         
     def set_book_as_not_downloaded(self, asin: str) -> bool:
         try: 
