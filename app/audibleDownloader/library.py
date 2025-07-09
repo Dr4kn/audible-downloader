@@ -103,18 +103,36 @@ class Library:
             except:
                 break
     
-    def get_undownloaded_book(self) -> list:
+    def get_undownloaded_book(self) -> str:
         try:
-            return self.con.cursor().execute("SELECT * FROM audiobooks WHERE downloaded = 0 AND publishing_date <= DATE('now')").fetchone()
+            return self.con.cursor().execute("SELECT * FROM audiobooks WHERE downloaded = 0 AND publishing_date <= DATE('now')").fetchone()[0]
         except:
-            return ()
+            return ""
         
+    def set_book_as_not_downloaded(self, asin: str) -> bool:
+        try: 
+            self.con.cursor().execute("UPDATE audiobooks SET downloaded=0 WHERE asin=?", [asin])
+            self.con.commit()
+            return True
+        except:
+            print("sql update for book not downloaded failed")
+            return False
     def set_book_as_downloaded(self, asin: str) -> bool:
         try: 
             self.con.cursor().execute("UPDATE audiobooks SET downloaded=1 WHERE asin=?", [asin])
             self.con.commit()
             return True
         except:
+            print("sql update for book downloaded failed")
+            return False
+
+    def set_book_as_not_converted(self, asin: str) -> bool:
+        try: 
+            self.con.cursor().execute("UPDATE audiobooks SET converted=0 WHERE asin=?", [asin])
+            self.con.commit()
+            return True
+        except:
+            print("sql update for book not converted failed")
             return False
 
     def set_book_as_converted(self, asin: str) -> bool:
@@ -123,6 +141,7 @@ class Library:
             self.con.commit()
             return True
         except:
+            print("sql update for book converted failed")
             return False
 
     def set_book_as_moved(self, asin: str) -> bool:
@@ -131,6 +150,7 @@ class Library:
             self.con.commit()
             return True
         except:
+            print("sql update for book moved failed")
             return False
     
     def get_book_data_by_asin(self, asin: str) -> list:
