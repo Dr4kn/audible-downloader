@@ -44,7 +44,9 @@ class Library:
                     purchase_date TEXT NOT NULL,
                     product_image TEXT,
                     pdf_url TEXT,
-                    downloaded INT
+                    downloaded INT,
+                    converted INT,
+                    moved INT
             );""")
 
     def export_library_as_json(self):
@@ -93,10 +95,10 @@ class Library:
                     pdf_url = resp.url
 
             try:
-                self.con.cursor().execute('INSERT INTO audiobooks values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                self.con.cursor().execute('INSERT INTO audiobooks values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                                             [asin, authors, title, subtitle, series_name, 0, 
                                             description, narrators, language, publisher, publishing_date, genres,
-                                            content_delivery_type, purchase_date, product_image, pdf_url, 0])
+                                            content_delivery_type, purchase_date, product_image, pdf_url, 0, 0, 0])
                 self.con.commit()
             except:
                 break
@@ -110,6 +112,22 @@ class Library:
     def set_book_as_downloaded(self, asin: str) -> bool:
         try: 
             self.con.cursor().execute("UPDATE audiobooks SET downloaded=1 WHERE asin=?", [asin])
+            self.con.commit()
+            return True
+        except:
+            return False
+
+    def set_book_as_converted(self, asin: str) -> bool:
+        try: 
+            self.con.cursor().execute("UPDATE audiobooks SET converted=1 WHERE asin=?", [asin])
+            self.con.commit()
+            return True
+        except:
+            return False
+
+    def set_book_as_moved(self, asin: str) -> bool:
+        try: 
+            self.con.cursor().execute("UPDATE audiobooks SET moved=1 WHERE asin=?", [asin])
             self.con.commit()
             return True
         except:
