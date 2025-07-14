@@ -156,5 +156,5 @@ class Library:
             print("sql update for book moved failed")
             return False
     
-    def get_book_data_by_asin(self, asin: str) -> list:
-        return self.con.cursor().execute("SELECT * FROM audiobooks WHERE asin=?", [asin]).fetchone()
+    def get_book_data_by_asin(self, asin: str) -> Book:
+        return Book(self.con.cursor().execute("SELECT * FROM audiobooks WHERE asin=?", [asin]).fetchone())
