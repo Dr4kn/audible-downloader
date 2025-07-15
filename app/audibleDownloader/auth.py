@@ -3,6 +3,7 @@ import os
 import ast
 import subprocess
 import json
+from pathlib import Path
 
 # create the file for the first login
 # have each one on a different line
@@ -10,8 +11,10 @@ import json
 # password
 # country code https://audible.readthedocs.io/en/latest/marketplaces/marketplaces.html#country-codes
 # "True" if you have an audible account before amazon otherwise "False"
-def get_login_data(path: os.path):
-    with open(path + "login.ini") as f:
+def get_login_data(path: Path):
+    login = path / "login.ini"
+    with open(login.resolve()) as f:
+        print("auth open works")
         lines = [line.strip() for line in f.readlines()]
         username: str = lines[0]
         password: str = lines[1]
@@ -22,16 +25,16 @@ def get_login_data(path: os.path):
 # gets your authentication token or creates it if it doesn't exist
 
 class Authentication:
-    def __init__(self, path: os.path):
-        self.path = path 
-        self.audible_json = path + "audible.json"
-        self.config_toml = path + "config.toml"
+    def __init__(self, path: Path):
+        self.path = path.resolve()
+        self.audible_json = (path / "audible.json").resolve()
+        self.config_toml = (path / "config.toml").resolve()
         # needed for the audible cli package to use the same path
         if "AUDIBLE_CONFIG_DIR" not in os.environ:
             # get shell remove /bin/ and make it to ~/.[shell]rc
             shell = f"~/.{os.environ['SHELL'][5:]}rc"
             # you probably need to restart python, the pc or your container that it takes effect
-            subprocess.run(f'echo "export AUDIBLE_CONFIG_DIR={path[:-1]}" >> {shell}', shell=True)
+            subprocess.run(f'echo "export AUDIBLE_CONFIG_DIR={path.resolve()}" >> {shell}', shell=True)
             os.putenv("AUDIBLE_CONFIG_DIR", path[:-1])
 
     def get_authentication(self):

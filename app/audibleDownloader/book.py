@@ -4,11 +4,11 @@ from pathlib import Path
 from .helper import Status
 from .plugins.cmd_decrypt import cli, FFMeta, FfmpegFileDecrypter
 
-def get_aax_audiobooks_in_directory(audiobook_download_directory):
-    return [each for each in os.listdir(audiobook_download_directory) if each.endswith(('.aax', '.aaxc'))]
+def get_aax_audiobooks_in_directory(audiobook_download_directory: Path):
+    return [each for each in os.listdir(audiobook_download_directory.resolve()) if each.endswith(('.aax', '.aaxc'))]
 
-def get_m4b_audiobooks_in_directory(audiobook_download_directory):
-    return [each for each in os.listdir(audiobook_download_directory) if each.endswith(('.m4b'))]
+def get_m4b_audiobooks_in_directory(audiobook_download_directory: Path):
+    return [each for each in os.listdir(audiobook_download_directory.resolve()) if each.endswith(('.m4b'))]
 
 class Book:
     def __init__(self, book: list, download_path=os.path.expanduser("~/.config/audible/")):
@@ -38,34 +38,38 @@ class Book:
             self.status = Status.MOVED
         else:
             self.status = Status.ERROR
-        self.download_path = download_path
-        self.audiobook_download_directory = download_path + self.asin
+        print(type(download_path))
+        if type(download_path) is not Path:
+            self.download_path = Path(download_path)
+        else:
+            self.download_path
+        self.audiobook_download_directory = (self.download_path / self.asin)
     
-    def set_path(self, download_path: os.path):
+    def set_path(self, download_path: Path):
         self.download_path = download_path
-        self.audiobook_download_directory = download_path + self.asin
+        self.audiobook_download_directory = download_path / self.asin
 
     def download(self):
-        os.makedirs(self.audiobook_download_directory, exist_ok=True)
+        os.makedirs(self.audiobook_download_directory.resolve(), exist_ok=True)
 
         subprocess.run(
             ["audible", "download", "-a", self.asin, 
             "--aax-fallback", "--timeout", "0", 
             "-f", "asin_ascii", "--ignore-podcasts", 
-            "-o", self.audiobook_download_directory, 
+            "-o", self.audiobook_download_directory.resolve(), 
             "--chapter", "--pdf", "--cover"])
-        if(len(get_aax_audiobooks_in_directory(self.audiobook_download_directory))):
+        if(len(get_aax_audiobooks_in_directory(self.audiobook_download_directory.resolve()))):
             return Status.DOWNLOADED
         else:
             return Status.ERROR
 
     def convert(self):
         subprocess.run(["audible", "decrypt", "-a", "-r","-f", "-c", "-d", 
-             self.audiobook_download_directory], cwd=self.audiobook_download_directory)
-        if(len(get_m4b_audiobooks_in_directory(self.audiobook_download_directory))):
+             self.audiobook_download_directory.resolve()], cwd=self.audiobook_download_directory.resolve())
+        if(len(get_m4b_audiobooks_in_directory(self.audiobook_download_directory.resolve()))):
             return Status.CONVERTED
         else:
-            if(len(get_aax_audiobooks_in_directory(self.audiobook_download_directory)) == 0):
+            if(len(get_aax_audiobooks_in_directory(self.audiobook_download_directory.resolve())) == 0):
                 return Status.NOT_DOWNLOADED
             else:
                 return Status.ERROR
@@ -102,7 +106,7 @@ class Book:
             base_cmd.extend(
                 [
                     "i",
-                    self.audiobook_download_directory + "/" + converted_audiobooks[0],
+                    (self.audiobook_download_directory / converted_audiobooks[0]).resolve(),
                 ]
             )
         else:
@@ -130,7 +134,7 @@ class Book:
             ]
         )
         if len(converted_audiobooks) == 1:
-            base_cmd.extend([self.audiobook_download_directory + "/converted" + converted_audiobooks[0]])
+            base_cmd.extend([(self.audiobook_download_directory / str("converted" + converted_audiobooks[0])).resolve()])
         else:
             print("TODO fix multiple files for audiobook")
             exit

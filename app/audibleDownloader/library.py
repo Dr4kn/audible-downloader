@@ -5,6 +5,7 @@ import sqlite3
 import re
 import httpx
 from .book import Book
+from pathlib import Path
 
 def get_library(auth):
     with audible.Client(auth = auth) as client:
@@ -24,10 +25,10 @@ def listToString(input: list):
     return stringList
 
 class Library:
-    def __init__(self, auth, path: os.path):
+    def __init__(self, auth, path: Path):
         self.auth = auth
         self.path = path
-        self.con = sqlite3.connect(self.path + "audiobooks.db")
+        self.con = sqlite3.connect((self.path / "audiobooks.db").resolve())
         self.con.execute("""CREATE TABLE IF NOT EXISTS audiobooks (
                     asin TEXT UNIQUE,
                     authors TEXT NOT NULL,
@@ -51,8 +52,8 @@ class Library:
             );""")
 
     def export_library_as_json(self):
-        path = self.path + "audible_library.json"
-        with open(path, "w") as f:
+        path = self.path / "audible_library.json"
+        with open(path.resolve(), "w") as f:
             json.dump(get_library(self.auth)["items"], f)
 
     # https://www.audiobookshelf.org/docs#book-directory-structure
@@ -108,7 +109,7 @@ class Library:
         try:
             # Date should be now and before because you could have prebought books, which aren't released yet.
             books = self.con.cursor().execute("SELECT * FROM audiobooks WHERE downloaded = 0 AND publishing_date <= DATE('now')").fetchall()
-            return [Book(book) for book in books]
+            return [Book(book, self.path) for book in books]
         except:
             return ()
         
