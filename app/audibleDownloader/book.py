@@ -1,7 +1,17 @@
+import subprocess
+import os
+from pathlib import Path
 from .helper import Status
+from .plugins.cmd_decrypt import cli, FFMeta, FfmpegFileDecrypter
+
+def get_aax_audiobooks_in_directory(audiobook_download_directory):
+    return [each for each in os.listdir(audiobook_download_directory) if each.endswith(('.aax', '.aaxc'))]
+
+def get_m4b_audiobooks_in_directory(audiobook_download_directory):
+    return [each for each in os.listdir(audiobook_download_directory) if each.endswith(('.m4b'))]
 
 class Book:
-    def __init__(self, book: list):
+    def __init__(self, book: list, download_path=os.path.expanduser("~/.config/audible/")):
         self.asin = book[0]
         self.authors = book[1]
         self.title = book[2]
@@ -28,3 +38,107 @@ class Book:
             self.status = Status.MOVED
         else:
             self.status = Status.ERROR
+        self.download_path = download_path
+        self.audiobook_download_directory = download_path + self.asin
+    
+    def set_path(self, download_path: os.path):
+        self.download_path = download_path
+        self.audiobook_download_directory = download_path + self.asin
+
+    def download(self):
+        os.makedirs(self.audiobook_download_directory, exist_ok=True)
+
+        subprocess.run(
+            ["audible", "download", "-a", self.asin, 
+            "--aax-fallback", "--timeout", "0", 
+            "-f", "asin_ascii", "--ignore-podcasts", 
+            "-o", self.audiobook_download_directory, 
+            "--chapter", "--pdf", "--cover"])
+        if(len(get_aax_audiobooks_in_directory(self.audiobook_download_directory))):
+            return Status.DOWNLOADED
+        else:
+            return Status.ERROR
+
+    def convert(self):
+        subprocess.run(["audible", "decrypt", "-a", "-r","-f", "-c", "-d", 
+             self.audiobook_download_directory], cwd=self.audiobook_download_directory)
+        if(len(get_m4b_audiobooks_in_directory(self.audiobook_download_directory))):
+            return Status.CONVERTED
+        else:
+            if(len(get_aax_audiobooks_in_directory(self.audiobook_download_directory)) == 0):
+                return Status.NOT_DOWNLOADED
+            else:
+                return Status.ERROR
+    
+    def set_metadata(self):
+        # supported tags
+        # https://blog.travisflix.com/supported-mp4-metadata-keys-with-ffmpeg/
+        # add pure path
+        # https://docs.python.org/3/library/pathlib.html
+        metadata = [
+            ["artist", self.authors],
+            ["album", self.title],
+            ["publisher", self.publisher],
+            ["year", self.publishing_date],
+            ["composer", self.narrators],
+            ["description", self.description],
+            ["genre", self.genres],
+            ["language", self.language],
+            ["asin", self.asin]
+        ]
+        if self.subtitle is not None:
+            metadata.append(["subtitle", self.subtitle])
+        if self.series_name is not None:
+            metadata.append(["series", self.series_name])
+        if self.series_sequence is not None:
+            metadata.append(["series-part", self.series_sequence])
+        base_cmd = [
+            "ffmpeg",
+            "-v",
+            "quiet",
+        ]
+        converted_audiobooks = get_m4b_audiobooks_in_directory(self.audiobook_download_directory)
+        if len(converted_audiobooks) == 1:
+            base_cmd.extend(
+                [
+                    "i",
+                    self.audiobook_download_directory + "/" + converted_audiobooks[0],
+                ]
+            )
+        else:
+            print("TODO fix multiple files for audiobook")
+            exit
+        # allows custom metadata tags
+        base_cmd.extend(
+            [
+                "-movflags",
+                "+use_metadata_tags",
+            ]
+        )
+        # for each
+        for tag in metadata:
+            base_cmd.extend(
+                [
+                    "-metadata",
+                    str(tag[0]) + "=" + str(tag[1]),
+                ]
+            )
+        base_cmd.extend(
+            [
+                "-c",
+                "copy",
+            ]
+        )
+        if len(converted_audiobooks) == 1:
+            base_cmd.extend([self.audiobook_download_directory + "/converted" + converted_audiobooks[0]])
+        else:
+            print("TODO fix multiple files for audiobook")
+            exit
+        base_cmd.extend(["-y"])
+        print(base_cmd)
+        exit
+        # converted_audiobooks = get_m4b_audiobooks_in_directory(self.audiobook_download_directory)
+        # if len(converted_audiobooks) != 1:
+        #     exit
+        # audiobook_path = self.audiobook_download_directory + "/" + converted_audiobooks[0]
+        # print(audiobook_path)
