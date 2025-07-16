@@ -1,4 +1,4 @@
-from audibleDownloader.library import get_series_sequence
+from audibleDownloader.metadata_guesser import get_series_sequence
 import pytest
 import os
 from pathlib import Path
