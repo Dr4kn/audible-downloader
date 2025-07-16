@@ -38,7 +38,6 @@ class Book:
             self.status = Status.MOVED
         else:
             self.status = Status.ERROR
-        print(type(download_path))
         if type(download_path) is not Path:
             self.download_path = Path(download_path)
         else:
