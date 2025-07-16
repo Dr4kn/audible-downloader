@@ -95,6 +95,9 @@ def parse_series_sequence(subtitle: str, series_name: str) -> None | int:
         if len(matching_words) == 0:
             return None
         no_series_sequence = subtitle.replace(matching_words, "")
+        # if the subtitle perfectly matches with the series it is very probably the first book in it
+        if len(no_series_sequence) == 0:
+            return 1
         numbers_found = get_numbers_from_string(no_series_sequence)
         if len(numbers_found) == 1:
             return int(numbers_found[0])
@@ -104,6 +107,7 @@ def parse_series_sequence(subtitle: str, series_name: str) -> None | int:
             only_correctly_parsed_numbers = [number for number in numbers if number != 0]
             if len(only_correctly_parsed_numbers) == 1:
                 return int(only_correctly_parsed_numbers[0])
+
 class Library:
     def __init__(self, auth, path: Path):
         self.auth = auth
