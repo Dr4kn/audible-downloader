@@ -50,10 +50,13 @@ def return_perfect_match(string1: str, string2: str) -> str:
 def get_numbers_from_string(string: str) -> list[str]:
     numbers_found = []
     p = '[\d]+([.,][\d]+)?'
-    # p = '[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+'
     if re.search(p, string) is not None:
         for catch in re.finditer(p, string):
-            numbers_found.append(catch[0])
+            try:
+                number = int(catch[0])
+            except:
+                number = float(catch[0].replace(',', '.'))
+            numbers_found.append(number)
     return numbers_found
 
 # https://stackoverflow.com/questions/37372603/how-to-remove-specific-substrings-from-a-set-of-strings-in-python
@@ -89,7 +92,7 @@ def parse_roman_numberal(numeral):
             lastVal = value
     return result + (-1 if subtraction else 1) * lastVal * lastCount
 
-def parse_series_sequence(subtitle: str, series_name: str) -> None | int:
+def get_series_sequence(title: str, subtitle: str, series_name: str) -> None | int:
     if subtitle is not None and series_name is not None:
         matching_words = return_perfect_match(subtitle, series_name)
         if len(matching_words) == 0:
@@ -100,13 +103,13 @@ def parse_series_sequence(subtitle: str, series_name: str) -> None | int:
             return 1
         numbers_found = get_numbers_from_string(no_series_sequence)
         if len(numbers_found) == 1:
-            return int(numbers_found[0])
+                return numbers_found[0]
         elif len(numbers_found) == 0:
             removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}', ' ', no_series_sequence)
             numbers = [parse_roman_numberal(number) for number in removed_symbols.split()]
             only_correctly_parsed_numbers = [number for number in numbers if number != 0]
             if len(only_correctly_parsed_numbers) == 1:
-                return int(only_correctly_parsed_numbers[0])
+                return only_correctly_parsed_numbers[0]
 
 class Library:
     def __init__(self, auth, path: Path):
@@ -157,7 +160,7 @@ class Library:
             publishing_date = book['release_date'] # format YYYY-MM-DD
             content_delivery_type = book['content_delivery_type'] # SinglePartBook, MultiPartBook, Periodical, 
             series_name = book['publication_name']
-            series_sequence = parse_series_sequence(subtitle, series_name)
+            series_sequence = get_series_sequence(title, subtitle, series_name)
 
             # genres are saved in multiple "ladders" with each ladder having one or more genre. Why it is that way I have no fucking idea
             genre_ladders = [category_ladders['ladder'] for category_ladders in book['category_ladders']]
