@@ -89,6 +89,25 @@ def parse_roman_numberal(numeral):
             lastVal = value
     return result + (-1 if subtraction else 1) * lastVal * lastCount
 
+def parse_series_sequence(subtitle: str, series_name: str) -> None | int:
+    if subtitle is not None and series_name is not None:
+        matching_words = return_perfect_match(subtitle, series_name)
+        if len(matching_words) == 0:
+            return None
+        no_series_sequence = subtitle.replace(matching_words, "")
+        # if the subtitle perfectly matches with the series it is very probably the first book in it
+        if len(no_series_sequence) == 0:
+            return 1
+        numbers_found = get_numbers_from_string(no_series_sequence)
+        if len(numbers_found) == 1:
+            return int(numbers_found[0])
+        elif len(numbers_found) == 0:
+            removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}', ' ', no_series_sequence)
+            numbers = [parse_roman_numberal(number) for number in removed_symbols.split()]
+            only_correctly_parsed_numbers = [number for number in numbers if number != 0]
+            if len(only_correctly_parsed_numbers) == 1:
+                return int(only_correctly_parsed_numbers[0])
+
 class Library:
     def __init__(self, auth, path: Path):
         self.auth = auth
@@ -138,37 +157,21 @@ class Library:
             publishing_date = book['release_date'] # format YYYY-MM-DD
             content_delivery_type = book['content_delivery_type'] # SinglePartBook, MultiPartBook, Periodical, 
             series_name = book['publication_name']
+            series_sequence = parse_series_sequence(subtitle, series_name)
 
             # genres are saved in multiple "ladders" with each ladder having one or more genre. Why it is that way I have no fucking idea
             genre_ladders = [category_ladders['ladder'] for category_ladders in book['category_ladders']]
             # get all the genres in each ladder, than flatten the arrays and discard every duplicate
             genres = listToString(list(set(sum([[genres['name'] for genres in ladders] for ladders in genre_ladders], []))))
-
-            series_sequence = None
-            if subtitle is not None and series_name is not None:
-                matching_words = return_perfect_match(subtitle, series_name)
-                no_series_sequence = subtitle.replace(matching_words, "")
-                numbers_found = get_numbers_from_string(no_series_sequence)
-                if len(numbers_found) == 1:
-                    series_sequence = numbers_found[0]
-                elif len(numbers_found) == 0:
-                    removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}', ' ', no_series_sequence)
-                    numbers = [parse_roman_numberal(number) for number in removed_symbols.split()]
-                    only_correctly_parsed_numbers = [number for number in numbers if number != 0]
-                    if len(only_correctly_parsed_numbers) == 1:
-                        series_sequence = only_correctly_parsed_numbers[0]
-
-            #TODO parse subtitle for Book number
-            #TODO check if series_name is Null
-            #TODO set series sequence to null or number
             purchase_date = book['purchase_date']
+
             # downloadables
             product_image = book['product_images']['500']
-            
             # pdf
             # this is a workaround described here:
             # https://audible.readthedocs.io/en/latest/misc/advanced.html
             # gets a working pdf link, but only if there is actually a pdf available
+            pdf_url = None
             if book['pdf_url'] is not None:
                 tld = self.auth.locale.domain
 
@@ -176,15 +179,12 @@ class Library:
                     resp = client.head(
                         f"https://www.audible.{tld}/companion-file/{asin}"
                     )
-                    pdf_url = resp.url
-            print(series_sequence)
-            print(asin)
+                    pdf_url = str(resp.url)
             try:
-                self.con.cursor().execute('INSERT INTO audiobooks values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                self.con.cursor().execute('INSERT INTO audiobooks VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                                             [asin, authors, title, subtitle, series_name, series_sequence, 
                                             description, narrators, language, publisher, publishing_date, genres,
                                             content_delivery_type, purchase_date, product_image, pdf_url, 0, 0, 0])
-                print("sql execute")
                 self.con.commit()
             except:
                 print("sql write didn't work")
