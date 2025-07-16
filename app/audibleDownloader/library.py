@@ -24,6 +24,71 @@ def listToString(input: list):
             stringList += ";"
     return stringList
 
+def return_perfect_match(string1: str, string2: str) -> str:
+    if len(string1) >= len(string2):
+        check_against = string1
+        string = string2
+    else:
+        check_against = string2
+        string = string1
+    current_position = 0
+    offset = 0
+    while len(check_against) - 1 >= current_position + offset:
+        matching_string = ""
+        while check_against[current_position + offset] == string[current_position]:
+            matching_string += string[current_position]
+            current_position += 1
+            if len(string) == current_position:
+                return matching_string
+            if len(check_against) <= current_position + offset:
+                return ""
+        current_position = 0
+        offset += 1
+    return ""
+
+# https://stackoverflow.com/questions/4289331/how-to-extract-numbers-from-a-string-in-python
+def get_numbers_from_string(string: str) -> list[str]:
+    numbers_found = []
+    p = '[\d]+([.,][\d]+)?'
+    # p = '[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+'
+    if re.search(p, string) is not None:
+        for catch in re.finditer(p, string):
+            numbers_found.append(catch[0])
+    return numbers_found
+
+# https://stackoverflow.com/questions/37372603/how-to-remove-specific-substrings-from-a-set-of-strings-in-python
+# returns 0 for incorrect value otherwise returns a number:
+def parse_roman_numberal(numeral):
+    ROMAN_CONSTANTS = (
+                ( "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" ),
+                ( "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC" ),
+                ( "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM" ),
+                ( "", "M", "MM", "MMM", "",   "",  "-",  "",    "",     ""   ),
+            )
+
+    ROMAN_SYMBOL_MAP = dict(I=1, V=5, X=10, L=50, C=100, D=500, M=1000)
+    numeral = numeral.upper()
+    result = 0
+    lastVal = 0
+    lastCount = 0
+    subtraction = False
+    for symbol in numeral[::-1]:
+        value = ROMAN_SYMBOL_MAP.get(symbol)
+        if not value:
+            return 0
+        if lastVal == 0:
+            lastCount = 1
+            lastVal = value
+        elif lastVal == value:
+            lastCount += 1
+            # exceptions
+        else:
+            result += (-1 if subtraction else 1) * lastVal * lastCount
+            subtraction = lastVal > value
+            lastCount = 1
+            lastVal = value
+    return result + (-1 if subtraction else 1) * lastVal * lastCount
+
 class Library:
     def __init__(self, auth, path: Path):
         self.auth = auth
@@ -79,6 +144,23 @@ class Library:
             # get all the genres in each ladder, than flatten the arrays and discard every duplicate
             genres = listToString(list(set(sum([[genres['name'] for genres in ladders] for ladders in genre_ladders], []))))
 
+            series_sequence = None
+            if subtitle is not None and series_name is not None:
+                matching_words = return_perfect_match(subtitle, series_name)
+                no_series_sequence = subtitle.replace(matching_words, "")
+                numbers_found = get_numbers_from_string(no_series_sequence)
+                if len(numbers_found) == 1:
+                    series_sequence = numbers_found[0]
+                elif len(numbers_found) == 0:
+                    removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}', ' ', no_series_sequence)
+                    numbers = [parse_roman_numberal(number) for number in removed_symbols.split()]
+                    only_correctly_parsed_numbers = [number for number in numbers if number != 0]
+                    if len(only_correctly_parsed_numbers) == 1:
+                        series_sequence = only_correctly_parsed_numbers[0]
+
+            #TODO parse subtitle for Book number
+            #TODO check if series_name is Null
+            #TODO set series sequence to null or number
             purchase_date = book['purchase_date']
             # downloadables
             product_image = book['product_images']['500']
@@ -95,14 +177,17 @@ class Library:
                         f"https://www.audible.{tld}/companion-file/{asin}"
                     )
                     pdf_url = resp.url
-
+            print(series_sequence)
+            print(asin)
             try:
                 self.con.cursor().execute('INSERT INTO audiobooks values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                                            [asin, authors, title, subtitle, series_name, 0, 
+                                            [asin, authors, title, subtitle, series_name, series_sequence, 
                                             description, narrators, language, publisher, publishing_date, genres,
                                             content_delivery_type, purchase_date, product_image, pdf_url, 0, 0, 0])
+                print("sql execute")
                 self.con.commit()
             except:
+                print("sql write didn't work")
                 break
    
     def get_undownloaded_books(self) -> list[Book]:
@@ -159,3 +244,4 @@ class Library:
     
     def get_book_data_by_asin(self, asin: str) -> Book:
         return Book(self.con.cursor().execute("SELECT * FROM audiobooks WHERE asin=?", [asin]).fetchone())
+    
