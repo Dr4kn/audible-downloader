@@ -110,7 +110,7 @@ class MetadataGuesser:
         
         if self.series_name is None:
             #TODO check for ,Book number
-            p = "[[,|;|:] *[a-zA-Z]*]? *[0-9]+ *| *[0-9]+ *"
+            p = r"[,;:] *[a-zA-Z]* *[0-9]+ *| *[0-9]+ *"
             results = re.findall(p, self.subtitle)
             if len(results) != 1:
                 return Status.ERROR
