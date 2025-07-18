@@ -99,7 +99,6 @@ class MetadataGuesser:
 
         if self.subtitle is None:
             if self.title == self.series_name:
-                print("test")
                 if self.language == "english":
                     self.subtitle = f"{self.title}, Book 1"
                 else:
