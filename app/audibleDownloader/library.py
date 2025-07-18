@@ -37,7 +37,7 @@ class Library:
                     title TEXT NOT NULL,
                     subtitle TEXT,
                     series_name TEXT,
-                    series_sequence INT,
+                    series_sequence TEXT,
                     description TEXT,
                     narrators TEXT,
                     language TEXT,
@@ -78,7 +78,9 @@ class Library:
             metadata_guesser = MetadataGuesser(title, subtitle, series_name)
             series_sequence = None
             if metadata_guesser.guess_missing_data() is Status.SUCCESS:
-                metadata_guesser = metadata_guesser.get_series_sequence()
+                subtitle = metadata_guesser.get_subtitle()
+                series_name = metadata_guesser.get_series_name()
+                series_sequence = metadata_guesser.get_series_sequence()
 
             # genres are saved in multiple "ladders" with each ladder having one or more genre. Why it is that way I have no fucking idea
             genre_ladders = [category_ladders['ladder'] for category_ladders in book['category_ladders']]
@@ -103,7 +105,7 @@ class Library:
                     pdf_url = str(resp.url)
             try:
                 self.con.cursor().execute('INSERT INTO audiobooks VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                                            [asin, authors, title, subtitle, series_name, series_sequence, 
+                                            [asin, authors, title, subtitle, series_name, str(series_sequence), 
                                             description, narrators, language, publisher, publishing_date, genres,
                                             content_delivery_type, purchase_date, product_image, pdf_url, 0, 0, 0])
                 self.con.commit()
@@ -165,4 +167,3 @@ class Library:
     
     def get_book_data_by_asin(self, asin: str) -> Book:
         return Book(self.con.cursor().execute("SELECT * FROM audiobooks WHERE asin=?", [asin]).fetchone())
-    

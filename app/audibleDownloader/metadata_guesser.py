@@ -26,7 +26,7 @@ def return_perfect_match(string1: str, string2: str) -> str:
 # https://stackoverflow.com/questions/4289331/how-to-extract-numbers-from-a-string-in-python
 def get_numbers_from_string(string: str) -> list[str]:
     numbers_found = []
-    p = '[\d]+([.,][\d]+)?'
+    p = '[0-9]+([.,][0-9]+)?'
     if re.search(p, string) is not None:
         for catch in re.finditer(p, string):
             try:
@@ -85,48 +85,71 @@ def word_to_number(word: str):
     return word_number_mapping.get(word.lower())
 
 class MetadataGuesser:
-    def __init__(self, title: str, subtitle: str | None, series_name: str | None):
+    def __init__(self, title: str, subtitle: str | None, series_name: str | None, language = None):
         self.title = title
         self.subtitle = subtitle
         self.series_name = series_name
         self.series_sequence = None
-        self.guess_missing_data()
+        self.language = language
 
     # return: Success or error
     def guess_missing_data(self) -> Status:
-        if self.subtitle is not None and self.series_name is not None:
-            matching_words = return_perfect_match(self.subtitle, self.series_name)
-            if len(matching_words) == 0:
-                return Status.ERROR
-            no_series_sequence = self.subtitle.replace(matching_words, "")
-            # if the subtitle perfectly matches with the series it is very probably the first book in it
-            if len(no_series_sequence) == 0:
+        if all((self.subtitle is None, self.series_name is None)):
+            return Status.ERROR
+
+        if self.subtitle is None:
+            if self.title == self.series_name:
+                if self.language == "english":
+                    self.subtitle = f"{self.title}, Book 1"
+                else:
+                    self.subtitle = f"{self.title} 1"
                 self.series_sequence = 1
                 return Status.SUCCESS
-            numbers_found = get_numbers_from_string(no_series_sequence)
-            if len(numbers_found) == 1:
-                    self.series_sequence = numbers_found[0]
-                    return Status.SUCCESS
-            elif len(numbers_found) == 0:
-                removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}|;|\||\\|/', ' ', no_series_sequence)
-                numbers = []
-                for number in removed_symbols.split():
-                    parsed_number = parse_roman_numeral(number)
-                    if parsed_number is not None:
-                        numbers.append(parsed_number)
-                    parsed_number = word_to_number(number)
-                    if parsed_number is not None:
-                        numbers.append(parsed_number)
-                    if len(numbers) > 1:
-                        return Status.ERROR
-                self.series_sequence = numbers[0]
+            else:
+                return Status.ERROR
+        
+        if self.series_name is None:
+            #TODO check for ,Book number
+            p = "[[,|;|:] *[a-zA-Z]*]? *[0-9]+ *| *[0-9]+ *"
+            results = re.findall(p, self.subtitle)
+            if len(results) != 1:
+                return Status.ERROR
+            self.series_sequence = get_numbers_from_string(results[0])[0]
+            self.series_name = self.subtitle.replace(results[0], "")
+            return Status.SUCCESS
+            
+        matching_words = return_perfect_match(self.subtitle, self.series_name)
+        if len(matching_words) == 0:
+            return Status.ERROR
+        no_series_sequence = self.subtitle.replace(matching_words, "")
+        # if the subtitle perfectly matches with the series it is very probably the first book in it
+        if len(no_series_sequence) == 0:
+            self.series_sequence = 1
+            return Status.SUCCESS
+        numbers_found = get_numbers_from_string(no_series_sequence)
+        if len(numbers_found) == 1:
+                self.series_sequence = numbers_found[0]
                 return Status.SUCCESS
+        elif len(numbers_found) == 0:
+            removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|{|}|;|\||\\|/', ' ', no_series_sequence)
+            numbers = []
+            for number in removed_symbols.split():
+                parsed_number = parse_roman_numeral(number)
+                if parsed_number is not None:
+                    numbers.append(parsed_number)
+                parsed_number = word_to_number(number)
+                if parsed_number is not None:
+                    numbers.append(parsed_number)
+                if len(numbers) > 1:
+                    return Status.ERROR
+            self.series_sequence = numbers[0]
+            return Status.SUCCESS
     
     def get_subtitle(self) -> str:
-        return self.series_sequence
+        return self.subtitle
 
     def get_series_name(self) -> str:
-        return self.series_sequence
+        return self.series_name
 
     def get_series_sequence(self) -> int | float:
         return self.series_sequence
