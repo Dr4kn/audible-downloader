@@ -68,6 +68,21 @@ def parse_roman_numberal(numeral):
             lastVal = value
     return result + (-1 if subtraction else 1) * lastVal * lastCount
 
+def word_to_number(word: str):
+    word_number_mapping = {
+        'one': 1,
+        'two': 2,
+        'three': 3,
+        'four': 4,
+        'five': 5,
+        'six': 6,
+        'seven': 7,
+        'eight': 8,
+        'nine': 9,
+        'ten': 10,
+    }
+    return word_number_mapping.get(word.lower())
+
 def get_series_sequence(title: str, subtitle: str, series_name: str) -> None | int:
     if subtitle is not None and series_name is not None:
         matching_words = return_perfect_match(subtitle, series_name)
@@ -84,5 +99,9 @@ def get_series_sequence(title: str, subtitle: str, series_name: str) -> None | i
             removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}', ' ', no_series_sequence)
             numbers = [parse_roman_numberal(number) for number in removed_symbols.split()]
             only_correctly_parsed_numbers = [number for number in numbers if number != 0]
+            if len(only_correctly_parsed_numbers) == 1:
+                return only_correctly_parsed_numbers[0]
+            numbers = [word_to_number(number) for number in removed_symbols.split()]
+            only_correctly_parsed_numbers = [number for number in numbers if number != None]
             if len(only_correctly_parsed_numbers) == 1:
                 return only_correctly_parsed_numbers[0]
