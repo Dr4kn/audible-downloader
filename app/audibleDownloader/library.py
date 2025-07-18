@@ -5,7 +5,8 @@ import sqlite3
 import re
 import httpx
 from .book import Book
-from .metadata_guesser import get_series_sequence
+from .metadata_guesser import MetadataGuesser
+from .helper import Status
 from pathlib import Path
 
 def get_library(auth):
@@ -74,7 +75,10 @@ class Library:
             publishing_date = book['release_date'] # format YYYY-MM-DD
             content_delivery_type = book['content_delivery_type'] # SinglePartBook, MultiPartBook, Periodical, 
             series_name = book['publication_name']
-            series_sequence = get_series_sequence(title, subtitle, series_name)
+            metadata_guesser = MetadataGuesser(title, subtitle, series_name)
+            series_sequence = None
+            if metadata_guesser.guess_missing_data() is Status.SUCCESS:
+                metadata_guesser = metadata_guesser.get_series_sequence()
 
             # genres are saved in multiple "ladders" with each ladder having one or more genre. Why it is that way I have no fucking idea
             genre_ladders = [category_ladders['ladder'] for category_ladders in book['category_ladders']]
