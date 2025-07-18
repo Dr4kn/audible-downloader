@@ -7,3 +7,4 @@ class Status(Enum):
     DOWNLOADED = 1
     CONVERTED = 2
     MOVED = 3
+    SUCCESS = 4

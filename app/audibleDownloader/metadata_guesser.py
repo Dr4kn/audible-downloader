@@ -1,4 +1,5 @@
 import re
+from .helper import Status
 
 def return_perfect_match(string1: str, string2: str) -> str:
     if len(string1) >= len(string2):
@@ -83,25 +84,47 @@ def word_to_number(word: str):
     }
     return word_number_mapping.get(word.lower())
 
-def get_series_sequence(title: str, subtitle: str, series_name: str) -> None | int:
-    if subtitle is not None and series_name is not None:
-        matching_words = return_perfect_match(subtitle, series_name)
-        if len(matching_words) == 0:
-            return None
-        no_series_sequence = subtitle.replace(matching_words, "")
-        # if the subtitle perfectly matches with the series it is very probably the first book in it
-        if len(no_series_sequence) == 0:
-            return 1
-        numbers_found = get_numbers_from_string(no_series_sequence)
-        if len(numbers_found) == 1:
-                return numbers_found[0]
-        elif len(numbers_found) == 0:
-            removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}', ' ', no_series_sequence)
-            numbers = [parse_roman_numberal(number) for number in removed_symbols.split()]
-            only_correctly_parsed_numbers = [number for number in numbers if number != 0]
-            if len(only_correctly_parsed_numbers) == 1:
-                return only_correctly_parsed_numbers[0]
-            numbers = [word_to_number(number) for number in removed_symbols.split()]
-            only_correctly_parsed_numbers = [number for number in numbers if number != None]
-            if len(only_correctly_parsed_numbers) == 1:
-                return only_correctly_parsed_numbers[0]
+class MetadataGuesser:
+    def __init__(self, title: str, subtitle: str | None, series_name: str | None):
+        self.title = title
+        self.subtitle = subtitle
+        self.series_name = series_name
+        self.series_sequence = None
+        self.guess_missing_data()
+
+    # return: Success or error
+    def guess_missing_data(self) -> Status:
+        if self.subtitle is not None and self.series_name is not None:
+            matching_words = return_perfect_match(self.subtitle, self.series_name)
+            if len(matching_words) == 0:
+                return Status.ERROR
+            no_series_sequence = self.subtitle.replace(matching_words, "")
+            # if the subtitle perfectly matches with the series it is very probably the first book in it
+            if len(no_series_sequence) == 0:
+                self.series_sequence = 1
+                return Status.SUCCESS
+            numbers_found = get_numbers_from_string(no_series_sequence)
+            if len(numbers_found) == 1:
+                    self.series_sequence = numbers_found[0]
+                    return Status.SUCCESS
+            elif len(numbers_found) == 0:
+                removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}|;|\||\\|/', ' ', no_series_sequence)
+                numbers = [parse_roman_numberal(number) for number in removed_symbols.split()]
+                only_correctly_parsed_numbers = [number for number in numbers if number != 0]
+                if len(only_correctly_parsed_numbers) == 1:
+                    self.series_sequence = only_correctly_parsed_numbers[0]
+                    return Status.SUCCESS
+                numbers = [word_to_number(number) for number in removed_symbols.split()]
+                only_correctly_parsed_numbers = [number for number in numbers if number != None]
+                if len(only_correctly_parsed_numbers) == 1:
+                    self.series_sequence = only_correctly_parsed_numbers[0]
+                    return Status.SUCCESS
+    
+    def get_subtitle(self) -> str:
+        return self.series_sequence
+
+    def get_series_name(self) -> str:
+        return self.series_sequence
+
+    def get_series_sequence(self) -> int | float:
+        return self.series_sequence
