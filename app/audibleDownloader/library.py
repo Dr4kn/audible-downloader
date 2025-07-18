@@ -110,8 +110,8 @@ class Library:
                                             content_delivery_type, purchase_date, product_image, pdf_url, 0, 0, 0])
                 self.con.commit()
             except:
+                print(asin)
                 print("sql write didn't work")
-                break
    
     def get_undownloaded_books(self) -> list[Book]:
         try:
