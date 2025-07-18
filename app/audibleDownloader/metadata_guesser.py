@@ -122,10 +122,6 @@ class MetadataGuesser:
         if len(matching_words) == 0:
             return Status.ERROR
         no_series_sequence = self.subtitle.replace(matching_words, "")
-        # if the subtitle perfectly matches with the series it is very probably the first book in it
-        if len(no_series_sequence) == 0:
-            self.series_sequence = 1
-            return Status.SUCCESS
         numbers_found = get_numbers_from_string(no_series_sequence)
         if len(numbers_found) == 1:
                 self.series_sequence = numbers_found[0]
@@ -142,6 +138,8 @@ class MetadataGuesser:
                     numbers.append(parsed_number)
                 if len(numbers) > 1:
                     return Status.ERROR
+            if len(numbers) == 0:
+                return Status.ERROR
             self.series_sequence = numbers[0]
             return Status.SUCCESS
     

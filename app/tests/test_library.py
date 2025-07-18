@@ -41,7 +41,11 @@ def test_basic_parsing():
     metadata_guesser = MetadataGuesser("Cibola Burn", "Book 4 of the Expanse", "Expanse")
     assert Status.SUCCESS == metadata_guesser.guess_missing_data()
     assert 4 == metadata_guesser.get_series_sequence()
+
     assert Status.ERROR == MetadataGuesser("Dune", None, None).guess_missing_data()
+
+    metadata_guesser = MetadataGuesser("Cibola Burn", "Expanse", "Expanse")
+    assert Status.ERROR == metadata_guesser.guess_missing_data()
 
 def test_roman_numeral_parsing():
     metadata_guesser = MetadataGuesser("Cool Name", "Book II of the Interesting Trilogy", "Interesting")
