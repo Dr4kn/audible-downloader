@@ -38,7 +38,7 @@ def get_numbers_from_string(string: str) -> list[str]:
 
 # https://stackoverflow.com/questions/37372603/how-to-remove-specific-substrings-from-a-set-of-strings-in-python
 # returns 0 for incorrect value otherwise returns a number:
-def parse_roman_numberal(numeral):
+def parse_roman_numeral(numeral) -> int | None:
     ROMAN_CONSTANTS = (
                 ( "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" ),
                 ( "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC" ),
@@ -55,7 +55,7 @@ def parse_roman_numberal(numeral):
     for symbol in numeral[::-1]:
         value = ROMAN_SYMBOL_MAP.get(symbol)
         if not value:
-            return 0
+            return None
         if lastVal == 0:
             lastCount = 1
             lastVal = value
@@ -109,16 +109,18 @@ class MetadataGuesser:
                     return Status.SUCCESS
             elif len(numbers_found) == 0:
                 removed_symbols = re.sub(r',|\.|\(|\)|:|\[|\]|\{|\}|;|\||\\|/', ' ', no_series_sequence)
-                numbers = [parse_roman_numberal(number) for number in removed_symbols.split()]
-                only_correctly_parsed_numbers = [number for number in numbers if number != 0]
-                if len(only_correctly_parsed_numbers) == 1:
-                    self.series_sequence = only_correctly_parsed_numbers[0]
-                    return Status.SUCCESS
-                numbers = [word_to_number(number) for number in removed_symbols.split()]
-                only_correctly_parsed_numbers = [number for number in numbers if number != None]
-                if len(only_correctly_parsed_numbers) == 1:
-                    self.series_sequence = only_correctly_parsed_numbers[0]
-                    return Status.SUCCESS
+                numbers = []
+                for number in removed_symbols.split():
+                    parsed_number = parse_roman_numeral(number)
+                    if parsed_number is not None:
+                        numbers.append(parsed_number)
+                    parsed_number = word_to_number(number)
+                    if parsed_number is not None:
+                        numbers.append(parsed_number)
+                    if len(numbers) > 1:
+                        return Status.ERROR
+                self.series_sequence = numbers[0]
+                return Status.SUCCESS
     
     def get_subtitle(self) -> str:
         return self.series_sequence
