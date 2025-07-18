@@ -80,7 +80,7 @@ class Library:
             if metadata_guesser.guess_missing_data() is Status.SUCCESS:
                 subtitle = metadata_guesser.get_subtitle()
                 series_name = metadata_guesser.get_series_name()
-                series_sequence = metadata_guesser.get_series_sequence()
+                series_sequence = str(metadata_guesser.get_series_sequence())
 
             # genres are saved in multiple "ladders" with each ladder having one or more genre. Why it is that way I have no fucking idea
             genre_ladders = [category_ladders['ladder'] for category_ladders in book['category_ladders']]
@@ -105,7 +105,7 @@ class Library:
                     pdf_url = str(resp.url)
             try:
                 self.con.cursor().execute('INSERT INTO audiobooks VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                                            [asin, authors, title, subtitle, series_name, str(series_sequence), 
+                                            [asin, authors, title, subtitle, series_name, series_sequence, 
                                             description, narrators, language, publisher, publishing_date, genres,
                                             content_delivery_type, purchase_date, product_image, pdf_url, 0, 0, 0])
                 self.con.commit()
