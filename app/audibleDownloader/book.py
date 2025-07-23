@@ -104,8 +104,8 @@ class Book:
         if len(converted_audiobooks) == 1:
             base_cmd.extend(
                 [
-                    "i",
-                    (self.audiobook_download_directory / converted_audiobooks[0]).resolve(),
+                    "-i",
+                    str((self.audiobook_download_directory / converted_audiobooks[0]).resolve()),
                 ]
             )
         else:
@@ -133,13 +133,13 @@ class Book:
             ]
         )
         if len(converted_audiobooks) == 1:
-            base_cmd.extend([(self.audiobook_download_directory / str("converted" + converted_audiobooks[0])).resolve()])
+            base_cmd.extend([str((self.audiobook_download_directory / str("converted" + converted_audiobooks[0])).resolve())])
         else:
             print("TODO fix multiple files for audiobook")
             exit
         base_cmd.extend(["-y"])
         print(base_cmd)
-        exit
+        subprocess.run(base_cmd)
         # converted_audiobooks = get_m4b_audiobooks_in_directory(self.audiobook_download_directory)
         # if len(converted_audiobooks) != 1:
         #     exit
