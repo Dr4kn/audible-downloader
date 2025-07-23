@@ -61,17 +61,6 @@ class Book:
             return Status.DOWNLOADED
         else:
             return Status.ERROR
-
-    def convert(self):
-        subprocess.run(["audible", "decrypt", "-a", "-r","-f", "-c", "-d", 
-             self.audiobook_download_directory.resolve()], cwd=self.audiobook_download_directory.resolve())
-        if(len(get_m4b_audiobooks_in_directory(self.audiobook_download_directory.resolve()))):
-            return Status.CONVERTED
-        else:
-            if(len(get_aax_audiobooks_in_directory(self.audiobook_download_directory.resolve())) == 0):
-                return Status.NOT_DOWNLOADED
-            else:
-                return Status.ERROR
     
     def set_metadata(self):
         # supported tags
