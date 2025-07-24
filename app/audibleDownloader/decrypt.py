@@ -3,12 +3,14 @@ from .book import Book
 import subprocess
 
 class Decyrpter:
-    def __init__(self, book: Book, activation_bytes: str, remove_intro_outro: True):
+    def __init__(self, book: Book, activation_bytes: str, remove_intro_outro = True):
         print(book.asin)
         self.book = book
         self.activation_bytes = activation_bytes
         self.aax_books = []
         self.cover, self.pdf, self.chapters, self.voucher = None, None, None, None
+        # TODO remove after testing
+        self.metadata = None 
         for file in list(self.book.audiobook_download_directory.iterdir()):
             match file.suffix:
                 case ".aax":
@@ -21,13 +23,16 @@ class Decyrpter:
                     self.chapters = file
                 case ".voucher":
                     self.voucher = file
+                # TODO remove after testing
+                case ".meta":
+                    self.metadata = file
 
     @property
     def base_cmd(self) -> list[str]:
         base_cmd = [
             "ffmpeg",
-            "-v",
-            "quiet",
+            # "-v",
+            # "quiet",
             "-y",
         ]
         if self.voucher is not None:
@@ -50,11 +55,47 @@ class Decyrpter:
             str(self.aax_books[0]),
         ]
         base_cmd.extend(input_file)
+        base_cmd.extend([
+            "-i",
+            str(self.metadata),
+        ])
+        base_cmd.extend([
+            "-i",
+            str(self.cover),
+        ])
+        #? metadata file
+        base_cmd.extend([
+            "-map_metadata",
+            "1",
+            "-map_metadata",
+            "0"
+            # "-movflags",
+            # "+use_metadata_tags",
+            # "-movflags",
+            # "+faststart",
+            # "-movflags",
+            # "frag_keyframe+empty_moov",
+            # "-metadata",
+            # "asin=187"
+        ])
+        #? Cover
+        base_cmd.extend([
+            "-map",
+            "0:a",
+            "-map",
+            "2:v",
+            "-disposition:v:0",
+            "attached_pic",
+            "-metadata:s:v",
+            "title=Album cover",
+            "-metadata:s:v",
+            "comment=Cover (Front)",
+        ])
         outputfile = [
             "-c",
             "copy",
             str(self.aax_books[0].with_suffix(".m4b"))
-        ] 
+        ]
         base_cmd.extend(outputfile)
         print(base_cmd)
         subprocess.run(base_cmd)
