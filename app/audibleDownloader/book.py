@@ -2,7 +2,6 @@ import subprocess
 import os
 from pathlib import Path
 from .helper import Status
-from .plugins.cmd_decrypt import cli, FFMeta, FfmpegFileDecrypter
 
 def get_aax_audiobooks_in_directory(audiobook_download_directory: Path):
     return [each for each in os.listdir(audiobook_download_directory.resolve()) if each.endswith(('.aax', '.aaxc'))]
