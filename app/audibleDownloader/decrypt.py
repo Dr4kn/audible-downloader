@@ -63,34 +63,38 @@ class Decyrpter:
             "-i",
             str(self.cover),
         ])
-        #? metadata file
-        base_cmd.extend([
-            "-map_metadata",
-            "1",
-            "-map_metadata",
-            "0"
-            # "-movflags",
-            # "+use_metadata_tags",
-            # "-movflags",
-            # "+faststart",
-            # "-movflags",
-            # "frag_keyframe+empty_moov",
-            # "-metadata",
-            # "asin=187"
-        ])
-        #? Cover
-        base_cmd.extend([
-            "-map",
+        set_cover = [
+            "-map", # use only the audio of the audiobook
             "0:a",
-            "-map",
+            "-map", # set the cover and metadata
             "2:v",
-            "-disposition:v:0",
+            "-disposition:v:0", # treat video stream as attached picture
             "attached_pic",
             "-metadata:s:v",
             "title=Album cover",
             "-metadata:s:v",
             "comment=Cover (Front)",
-        ])
+        ]
+        base_cmd.extend(set_cover)
+        set_metadata = [
+            "-map_metadata",
+            "1",
+            "-map_metadata", # copy metadata in the original that isn't in the metadata file to the output
+            "0",
+            "-metadata",
+            "genre=fantasy",
+            "-metadata",
+            "description=how, asdfasd, sadfsadfsdafsdf",
+            "-metadata",
+            "asin=187",
+        ]
+        base_cmd.extend(set_metadata)
+        faststart = [ # can slighlty improve playback performance when streaming.
+            "-movflags", 
+            "+faststart",
+        ]
+        base_cmd.extend(faststart)
+
         outputfile = [
             "-c",
             "copy",
