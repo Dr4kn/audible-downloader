@@ -1,5 +1,6 @@
 from pathlib import Path
 from .book import Book
+from .plugins.cmd_decrypt import FFMeta, ApiChapterInfo, _get_voucher_filename, _get_chapter_filename
 import subprocess
 
 class Decyrpter:
@@ -27,6 +28,36 @@ class Decyrpter:
                 case ".meta":
                     self.metadata = file
 
+        # audible cmd_decyrpt
+        self._api_chapter = None
+        # TODO multiple input files
+        self._source = self.aax_books[0]
+        base_cmd = self.base_cmd
+        self.book_path = self.aax_books[0]
+        self.metafile = self.create_meta_file(base_cmd, self.book_path)
+        self.ffmeta = FFMeta(self.metafile)
+
+    @property
+    def api_chapter(self) -> ApiChapterInfo:
+        if self._api_chapter is None:
+            try:
+                voucher_filename = _get_voucher_filename(self._source)
+                self._api_chapter = ApiChapterInfo.from_file(voucher_filename)
+            except:
+                voucher_filename = _get_chapter_filename(self._source)
+                self._api_chapter = ApiChapterInfo.from_file(voucher_filename)
+        return self._api_chapter
+
+    @property
+    def rebuild_chapters(self) -> None:
+        # if not self._is_rebuilded:
+        self.ffmeta.update_chapters_from_chapter_info(
+            self.api_chapter, True, False, True
+        )
+        # self._is_rebuilded = True
+
+                   
+
     @property
     def base_cmd(self) -> list[str]:
         base_cmd = [
@@ -47,14 +78,20 @@ class Decyrpter:
         return base_cmd
     
     def decrypt(self):
-        base_cmd = self.base_cmd
+
+
+        # chapter = Chapter(book_path, metafile, self.chapters)
+        # print(chapter.get_chapters())
         # TODO check if aax or aaxc
         # TODO work with multiple audio files
+        self.rebuild_chapters
+        self.ffmeta.write(self.metafile)
+        base_cmd = self.base_cmd
         input_file = [
             "-i",
-            str(self.aax_books[0]),
+            str(self.book_path),
         ]
-        base_cmd.extend(input_file)
+        self.base_cmd.extend(input_file)
         base_cmd.extend([
             "-i",
             str(self.metadata),
@@ -102,7 +139,18 @@ class Decyrpter:
         ]
         base_cmd.extend(outputfile)
         print(base_cmd)
-        subprocess.run(base_cmd)
+        # subprocess.run(base_cmd)
         print("fin")
 
+    def create_meta_file(self, ffmpeg_command: list[str], book_path: Path) -> Path:
+        metafile = book_path.with_suffix(".meta")
+        ffmpeg_command.extend([
+            "-i",
+            str(book_path),
+            "-f",
+            "ffmetadata",
+            str(metafile),
+        ])
+        subprocess.run(ffmpeg_command)
+        return metafile
         
