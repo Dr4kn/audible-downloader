@@ -10,8 +10,7 @@ class Decyrpter:
         self.activation_bytes = activation_bytes
         self.aax_books = []
         self.cover, self.pdf, self.chapters, self.voucher = None, None, None, None
-        # TODO remove after testing
-        self.metadata = None 
+        self.remove_intro_outro = remove_intro_outro
         for file in list(self.book.audiobook_download_directory.iterdir()):
             match file.suffix:
                 case ".aax":
@@ -24,9 +23,6 @@ class Decyrpter:
                     self.chapters = file
                 case ".voucher":
                     self.voucher = file
-                # TODO remove after testing
-                case ".meta":
-                    self.metadata = file
 
         # audible cmd_decyrpt
         self._api_chapter = None
@@ -52,7 +48,7 @@ class Decyrpter:
     def rebuild_chapters(self) -> None:
         # if not self._is_rebuilded:
         self.ffmeta.update_chapters_from_chapter_info(
-            self.api_chapter, True, False, True
+            self.api_chapter, True, False, self.remove_intro_outro
         )
         # self._is_rebuilded = True
 
@@ -87,14 +83,22 @@ class Decyrpter:
         self.rebuild_chapters
         self.ffmeta.write(self.metafile)
         base_cmd = self.base_cmd
+        if self.remove_intro_outro:
+            start_new, duration_new = self.ffmeta.get_start_end_without_intro_outro(self.api_chapter)
+            base_cmd.extend([
+                "-ss",
+                f"{start_new}ms",
+                "-t",
+                f"{duration_new}ms",
+            ])
         input_file = [
             "-i",
             str(self.book_path),
         ]
-        self.base_cmd.extend(input_file)
+        base_cmd.extend(input_file)
         base_cmd.extend([
             "-i",
-            str(self.metadata),
+            str(self.metafile),
         ])
         base_cmd.extend([
             "-i",
@@ -118,6 +122,8 @@ class Decyrpter:
             "1",
             "-map_metadata", # copy metadata in the original that isn't in the metadata file to the output
             "0",
+            "-map_chapters",
+            "1",
             "-metadata",
             "genre=fantasy",
             "-metadata",
@@ -139,7 +145,7 @@ class Decyrpter:
         ]
         base_cmd.extend(outputfile)
         print(base_cmd)
-        # subprocess.run(base_cmd)
+        subprocess.run(base_cmd)
         print("fin")
 
     def create_meta_file(self, ffmpeg_command: list[str], book_path: Path) -> Path:
