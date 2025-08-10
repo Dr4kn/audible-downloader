@@ -18,12 +18,12 @@ def get_library(auth):
         )
     return library
 
-def listToString(input: list): 
+def listToString(input: list, seperator: str): 
     stringList = ""
     for i in range(0, len(input)):
         stringList += input[i]
         if (i != len(input) - 1):
-            stringList += ";"
+            stringList += seperator
     return stringList
 
 class Library:
@@ -62,14 +62,14 @@ class Library:
     def add_books(self):
         for book in get_library(self.auth)["items"]:
             asin = book['asin']
-            authors = listToString([author['name'] for author in book["authors"]])
+            authors = listToString([author['name'] for author in book["authors"]], " & ")
             title = book['title']
             subtitle = book['subtitle']
             # descriptions sometimes have unwanted <x> </x> html tags or might end in three or more dots.
             pattern = r"</?[a-zA-Z]>|\.{3,}"
             description = re.sub(pattern, "", book['merchandising_summary'])
 
-            narrators = listToString([narrator['name'] for narrator in book['narrators']])
+            narrators = listToString([narrator['name'] for narrator in book['narrators']], ", ")
             language = book['language']
             publisher = book['publisher_name']
             publishing_date = book['release_date'] # format YYYY-MM-DD
@@ -85,7 +85,7 @@ class Library:
             # genres are saved in multiple "ladders" with each ladder having one or more genre. Why it is that way I have no fucking idea
             genre_ladders = [category_ladders['ladder'] for category_ladders in book['category_ladders']]
             # get all the genres in each ladder, than flatten the arrays and discard every duplicate
-            genres = listToString(list(set(sum([[genres['name'] for genres in ladders] for ladders in genre_ladders], []))))
+            genres = listToString(list(set(sum([[genres['name'] for genres in ladders] for ladders in genre_ladders], []))), "; ")
             purchase_date = book['purchase_date']
 
             # downloadables
